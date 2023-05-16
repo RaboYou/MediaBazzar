@@ -1,0 +1,791 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Text;
+using System.Windows.Forms;
+
+namespace MediaBazzar
+{
+    /// <summary>
+    /// This class handles SQL server queries
+    /// </summary>
+    /// <remarks>
+    /// All SQL queries should be here
+    /// </remarks>
+    class SQLCon
+    {
+        /// <summary>
+        /// credentials for the server, I know that they should be in separate file and be kept on gitignore file, but it's just for now
+        /// </summary>
+        private string DataSource = "mssql.fhict.local";
+        private string UserID = "dbi472712_test";
+        private string Password = "Horseradish666";
+        private string InitialCatalog = "dbi472712_test";
+        private SqlConnectionStringBuilder builder;
+
+        /// <summary>
+        /// constructor for the connection, it uses ConnectionStringbuilder for MySQL, because it looks nicer
+        /// </summary>
+        /// <remarks>
+        /// It creates something like this:
+        /// "Server=studmysql01.fhict.local;Uid=dbi465395;Database=dbi465395;Pwd=Michael;");
+        /// </remarks>
+        public SQLCon()
+        {
+            builder = new SqlConnectionStringBuilder();
+            builder.DataSource = DataSource;
+            builder.UserID = UserID;
+            builder.Password = Password;
+            builder.InitialCatalog = InitialCatalog;
+        }
+
+        /// <summary>
+        /// This method checks if the password is correct and is the account active in the database
+        /// uses BCrypt to verify if the hashed password is matching
+        /// </summary>
+        /// <param name="UserName">Takes user name from the textbox</param>
+        /// <param name="password">Takes password from the textbox and compares it with the hashed password from the database</param>
+        /// <returns>person class object or null if it catches an exception</returns>
+        public Person CheckPassword(string UserName, string password)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"SELECT * FROM users WHERE LOGIN = '{UserName}';");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        if (dt.Rows.Count == 1)
+                        {
+                            DataRow dr = dt.Rows[0];
+                            string hashed_password = dr["user_password"].ToString();
+
+                            if (BCrypt.Net.BCrypt.Verify(password, hashed_password))
+                            {
+                                Person person = GetPerson(UserName);
+                                if (person.isActive)
+                                {
+                                    MessageBox.Show($"{person.GetName()} access level: {GetPersonAccessLevel(person.id)}", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    connection.Close();
+                                    return person;
+                                }
+                                else
+                                {
+                                    throw new Exception($"Account inactive");
+                                }
+                                //MessageBox.Show(person.GetName(), "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                            }
+                            else
+                            {
+                                throw new Exception($"Wrong password");
+                            }
+
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"Wrong amount of matches: {dt.Rows.Count}");
+                        }
+                    }
+                }
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                catch (ArgumentException)
+                {
+                    MessageBox.Show("User does not exist", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method actually pulls a person clads object from the database
+        /// </summary>
+        /// <param name="user_login">it uses user login as a parameter since logins are unique</param>
+        /// <returns>a person class object or null if it </returns>
+        public Person GetPerson(string user_login)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"SELECT * FROM USERS WHERE LOGIN = '{user_login}';");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        if (dt.Rows.Count == 1)
+                        {
+                            DataRow dr = dt.Rows[0];
+                            int id = Convert.ToInt32(dr["id"].ToString());
+                            string firstName = dr["first_name"].ToString();
+                            string lastName = dr["last_name"].ToString();
+                            DateTime dateOfBirth = Convert.ToDateTime(dr["date_of_birth"].ToString());
+                            Nationality nationality = (Nationality)Enum.Parse(typeof(Nationality), dr["nationality"].ToString());
+                            string email = dr["email"].ToString();
+                            string addressZipCode = dr["address_zip_code"].ToString();
+                            string addressCity = dr["address_city"].ToString();
+                            string addressStreet = dr["address_street"].ToString();
+                            DateTime dateOfEmployment = Convert.ToDateTime(dr["date_of_employment"].ToString());
+                            int positionId = Convert.ToInt32(dr["position_id"].ToString());
+                            bool isActive = dr["is_active"].ToString() == "0" ? false : true;
+                            string login = dr["login"].ToString();
+                            char gender = Convert.ToChar(dr["gender"].ToString());
+                            Person user = new Person(id, firstName, lastName, dateOfBirth, nationality, email, addressZipCode, addressCity, addressStreet, dateOfEmployment, positionId, isActive, login, gender);
+                            return user;
+                        }
+                        else
+                        {
+                            throw new Exception($"Wrong amount of matches: {dt.Rows.Count}");
+                        }
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public List<Person> GetAllPersons()
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"SELECT * FROM USERS;");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt); 
+
+                        if (dt.Rows.Count > 0)
+                        {
+                            List<Person> persons = new List<Person>();
+                            foreach (DataRow dr in dt.Rows)
+                            {
+                                int id = Convert.ToInt32(dr["id"].ToString());
+                                string firstName = dr["first_name"].ToString();
+                                string lastName = dr["last_name"].ToString();
+                                DateTime dateOfBirth = Convert.ToDateTime(dr["date_of_birth"].ToString());
+                                Nationality nationality = (Nationality)Enum.Parse(typeof(Nationality), dr["nationality"].ToString());
+                                string email = dr["email"].ToString();
+                                string addressZipCode = dr["address_zip_code"].ToString();
+                                string addressCity = dr["address_city"].ToString();
+                                string addressStreet = dr["address_street"].ToString();
+                                DateTime dateOfEmployment = Convert.ToDateTime(dr["date_of_employment"].ToString());
+                                int positionId = Convert.ToInt32(dr["position_id"].ToString());
+                                bool isActive = dr["is_active"].ToString() == "0" ? false : true;
+                                string login = dr["login"].ToString();
+                                char gender = Convert.ToChar(dr["gender"].ToString());
+                                Person user = new Person(id, firstName, lastName, dateOfBirth, nationality, email, addressZipCode, addressCity, addressStreet, dateOfEmployment, positionId, isActive, login, gender);
+                                persons.Add(user);
+                            }
+                            return persons;
+                        }
+                        else
+                        {
+                            throw new Exception($"Wrong amount of matches: {dt.Rows.Count}");
+                        }
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public List<Person> SearchPersons(string name)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"SELECT * FROM USERS WHERE first_name LIKE '%{name}%' OR last_name LIKE '%{name}%';;");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        if (dt.Rows.Count > 0)
+                        {
+                            List<Person> persons = new List<Person>();
+                            foreach (DataRow dr in dt.Rows)
+                            {
+                                int id = Convert.ToInt32(dr["id"].ToString());
+                                string firstName = dr["first_name"].ToString();
+                                string lastName = dr["last_name"].ToString();
+                                DateTime dateOfBirth = Convert.ToDateTime(dr["date_of_birth"].ToString());
+                                Nationality nationality = (Nationality)Enum.Parse(typeof(Nationality), dr["nationality"].ToString());
+                                string email = dr["email"].ToString();
+                                string addressZipCode = dr["address_zip_code"].ToString();
+                                string addressCity = dr["address_city"].ToString();
+                                string addressStreet = dr["address_street"].ToString();
+                                DateTime dateOfEmployment = Convert.ToDateTime(dr["date_of_employment"].ToString());
+                                int positionId = Convert.ToInt32(dr["position_id"].ToString());
+                                bool isActive = dr["is_active"].ToString() == "0" ? false : true;
+                                string login = dr["login"].ToString();
+                                char gender = Convert.ToChar(dr["gender"].ToString());
+                                Person user = new Person(id, firstName, lastName, dateOfBirth, nationality, email, addressZipCode, addressCity, addressStreet, dateOfEmployment, positionId, isActive, login, gender);
+                                persons.Add(user);
+                            }
+                            return persons;
+                        }
+                        else
+                        {
+                            return null;
+                            //throw new Exception($"Wrong amount of matches: {dt.Rows.Count}");
+                        }
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method pulls access level of a person, access level indicates which form will be opened next
+        /// there are 4 levels of access from 1 to 4, TBD which is which
+        /// </summary>
+        /// <param name="id">persons id is taken as a parameter for query</param>
+        /// <returns>access level as an int from 1 to 4, if something goes wrong it returns -1 as an error</returns>
+        public int GetPersonAccessLevel(int id)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"SELECT positions.access_level FROM users join positions on positions.id = users.position_id where users.id = '{id}';");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        if (dt.Rows.Count == 1)
+                        {
+                            DataRow dr = dt.Rows[0];
+                            int accessLevel = Convert.ToInt32(dr["access_level"].ToString());
+                            return accessLevel;
+                        }
+                        else
+                        {
+                            throw new Exception($"Wrong amount of matches: {dt.Rows.Count}");
+                        }
+                    }
+                }
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return -1; //null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return -1; //null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public bool CheckAccount(string username)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"SELECT login FROM users where users.login = '{username}';");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        if (dt.Rows.Count == 0)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            throw new Exception($"Account already exists: {dt.Rows.Count}");
+                        }
+                    }
+                }
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return true; //null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return true; //null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public int GetPosition(string input)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                try
+                {
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"select id from positions where position_name = '{input}';");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        if (dt.Rows.Count == 1)
+                        {
+                            foreach (DataRow result in dt.Rows)
+                            {
+                                return Convert.ToInt32(result["id"]);
+                            }
+                            return -1;
+                        }
+                        else
+                        {
+                            throw new Exception($"Account already exists: {dt.Rows.Count}");
+                        }
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return -1; //null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return -1; //null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public void CreatePerson(Person person, string password)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"INSERT INTO Users (first_name, last_name, date_of_birth, nationality, email, address_zip_code, address_city, address_street, date_of_employment, position_id, is_active, login, user_password, gender) VALUES (@first_name, @last_name, @date_of_birth, @nationality, @email, @address_zip_code, @address_city, @address_street, @date_of_employment, @position_id, @is_active, @login, @user_password, @gender);");
+                    String sql = sb.ToString();
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        command.Parameters.AddWithValue("@first_name", person.firstName);
+                        command.Parameters.AddWithValue("@last_name", person.lastName);
+                        command.Parameters.AddWithValue("@date_of_birth", person.dateOfBirth);
+                        command.Parameters.AddWithValue("@nationality", person.nationality.ToString());
+                        command.Parameters.AddWithValue("@email", person.email);
+                        command.Parameters.AddWithValue("@address_zip_code", person.addressZipCode);
+                        command.Parameters.AddWithValue("@address_city", person.addressCity);
+                        command.Parameters.AddWithValue("@address_street", person.addressStreet);
+                        command.Parameters.AddWithValue("@date_of_employment", person.dateOfEmployment);
+                        command.Parameters.AddWithValue("@position_id", person.positionId);
+                        command.Parameters.AddWithValue("@is_active", person.isActive);
+                        command.Parameters.AddWithValue("@login", person.login);
+                        command.Parameters.AddWithValue("@user_password", BCrypt.Net.BCrypt.HashPassword(password));
+                        command.Parameters.AddWithValue("@gender", person.gender);
+                        command.ExecuteNonQuery();
+                    }
+                }
+<<<<<<< HEAD
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Queries the database for 
+        /// </summary>
+        /// <returns></returns>
+        public List<DepartmentViewClass> GetDepartmentViews()
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append($"select departments.dept_name, departments.id as dept_id, users.first_name, users.last_name, positions.position_name, users.id from departments join positions on positions.dept_id = departments.id join users on users.position_id = positions.id where positions.is_workshift_position = 'true';");
+                    String sql = sb.ToString();
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+                        List<DepartmentViewClass> departmentViewList = new List<DepartmentViewClass>();
+                        List<string> departmentNamesList = new List<string>();
+                        List<UserDepartmentViewClass> employees = new List<UserDepartmentViewClass>();
+
+                        if (dt.Rows.Count > 0)
+                        {
+                            foreach (DataRow dr in dt.Rows)
+                            {
+                                if (!departmentNamesList.Contains(dr["dept_name"].ToString()))
+                                {
+                                    DepartmentViewClass departmentViewClass = new DepartmentViewClass(dr["dept_name"].ToString(), Convert.ToInt32(dr["dept_id"]));
+                                    departmentViewList.Add(departmentViewClass);
+                                    departmentNamesList.Add(dr["dept_name"].ToString());
+                                }
+                            }
+                            foreach (DataRow dr in dt.Rows)
+                            {
+                                foreach (var item in departmentViewList)
+                                {
+                                    if (item.departmentName == dr["dept_name"].ToString())
+                                    {
+                                        item.AddEmployee(dr["first_name"].ToString(), dr["last_name"].ToString(), dr["position_name"].ToString(), Convert.ToInt32(dr["id"]));
+                                    }
+                                }
+                            }
+
+                            return departmentViewList;
+
+                        }
+                        else
+                        {
+                            throw new Exception($"Empty response, matches: {dt.Rows.Count}");
+                        }
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+        public List<WorkShiftDate> GetWorkShiftsByDate(DateTime workDate)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                //Server=mssql.fhict.local;Database=dbi472712;User Id=dbi472712;Password=YourChosenPassword;
+                //MessageBox.Show("Some text", "Some title", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+=======
+            } 
+            catch (SqlException e)
+            {
+                MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        public void UpdatePerson(Person person, int index)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+>>>>>>> origin/admin
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+<<<<<<< HEAD
+                    sb.Append($"select workshift_date.work_date, workshift_date.shift_type, workshift_date.min_workers, workshift_date.id as workshift_date_id, workshift_user.user_id, workshift_user.id as workshift_user_id  from workshift_date join workshift_user on workshift_date.id = workshift_user.shift_id where work_date = '{workDate.ToString("yyyy-MM-dd")}';");
+=======
+                    sb.Append($"UPDATE Users SET first_name = '{person.firstName}', last_name = '{person.lastName}', date_of_birth = '{person.dateOfBirth}', nationality = '{person.nationality}', email = '{person.email}', address_zip_code = '{person.addressZipCode}', address_city = '{person.addressCity}', address_street = '{person.addressStreet}', date_of_employment = '{person.dateOfEmployment}', position_id = '{person.positionId}', is_active = '{person.isActive}', gender = '{person.gender}' WHERE id = '{index}'");
+>>>>>>> origin/admin
+                    String sql = sb.ToString();
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+<<<<<<< HEAD
+                        SqlDataAdapter da = new SqlDataAdapter(command);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+                        List<WorkShiftDate> workShiftDates = new List<WorkShiftDate>();
+                        List<int> shiftIds = new List<int>();
+
+                        if (dt.Rows.Count > 0)
+                        {
+
+                            foreach (DataRow dr in dt.Rows)
+                            {
+                                int workshiftDateId = Convert.ToInt32(dr["workshift_date_id"]);
+                                if (!shiftIds.Contains(workshiftDateId))
+                                {
+                                    ShiftType shiftType = (ShiftType)Enum.Parse(typeof(ShiftType), dr["shift_type"].ToString());
+                                    int minAmountOfWorkers = Convert.ToInt32(dr["min_workers"]);
+                                    WorkShiftDate workShiftDate = new WorkShiftDate(workDate, shiftType, minAmountOfWorkers, workshiftDateId);
+                                    workShiftDates.Add(workShiftDate);
+                                    shiftIds.Add(workshiftDateId);
+                                }
+                            }
+                            foreach (DataRow dr in dt.Rows)
+                            {
+                                ShiftType shiftType = (ShiftType)Enum.Parse(typeof(ShiftType), dr["shift_type"].ToString());
+                                int minAmountOfWorkers = Convert.ToInt32(dr["min_workers"]);
+                                int workshiftDateId = Convert.ToInt32(dr["workshift_date_id"]);
+                                int userId = Convert.ToInt32(dr["user_id"]);
+                                int workshiftUserId = Convert.ToInt32(dr["workshift_user_id"]);
+                                foreach (var item in workShiftDates)
+                                {
+                                    if (item.workshiftDateId == workshiftDateId)
+                                    {
+                                        item.AddUser(userId, workshiftUserId);
+                                    }
+                                }
+                            }
+                            return workShiftDates;
+                        }
+                        else
+                        {
+                            throw new Exception($"No results for {sql}");
+                        }
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null; //null;
+                }
+                catch (Exception e)
+                {
+                    //MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null; //null;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public bool UpdateShift(int minAmountOfWorkers, List<int> usersForThisShift, DateTime date, ShiftType shiftType = ShiftType.Morning, int workshiftDateId = -1, List<WorkshiftClass> workshifts = null)
+        {
+            using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+            {
+                try
+                {
+
+                    StringBuilder sb = new StringBuilder();
+                    List<int> workshiftIds = new List<int>();
+                    sb.Append($"begin tran \n");
+                    string shift = shiftType.ToString();
+                    if (workshiftDateId == -1)
+                    {
+                        sb.Append($"insert into workshift_date (work_date, is_holiday, is_weekend, shift_type, min_workers) values ('{date.ToString("yyyy-MM-dd")}', 0,0,'{shift}',{minAmountOfWorkers});\n");
+                        foreach (var item in usersForThisShift)
+                        {
+                            sb.Append($"insert into workshift_user (shift_id, user_id) values ((select id from workshift_date where work_date = '{date.ToString("yyyy-MM-dd")}' and shift_type = '{shift}'), {item});\n");
+                        }
+                    }
+                    else
+                    {
+                        sb.Append($"update workshift_date set min_workers = {minAmountOfWorkers} where id = {workshiftDateId};\n");
+                        sb.Append($"delete from workshift_user where shift_id = {workshiftDateId};\n");
+                        /*foreach (var item in workshifts)
+                        {
+                            workshiftIds.Add(item.workshiftUserId);
+                            sb.Append($"delete from workshift_user where shift_id = {workshiftDateId};\n");
+                            //item.workshiftUserId;
+                        }*/
+                        foreach (var users in usersForThisShift)
+                        {
+                            sb.Append($"insert into workshift_user (shift_id, user_id) values ({workshiftDateId}, {users});\n");
+                        }
+                    }
+                    sb.Append($"commit tran");
+                    String sql = sb.ToString();
+                    MessageBox.Show(sql, "SQL Query", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+=======
+                        command.ExecuteNonQuery();
+                    }
+                }
+                catch (SqlException e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.ToString(), "Wrong db output", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    connection.Close();
+                }
+            }
+        }
+
+        public void TerminatePerson()
+        {
+
+>>>>>>> origin/admin
+        }
+    }
+}

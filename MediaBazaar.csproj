@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A55DC2D7-4498-418C-9E99-B36C9B3D3CAE}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MediaBazzar</RootNamespace>
+    <AssemblyName>MediaBazzar</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>9</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>9</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BCrypt.Net-Next, Version=4.0.2.0, Culture=neutral, PublicKeyToken=1e11be04b6288443, processorArchitecture=MSIL">
+      <HintPath>..\packages\BCrypt.Net-Next.4.0.2\lib\net472\BCrypt.Net-Next.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.9.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.9\lib\BouncyCastle.Crypto.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Protobuf, Version=3.15.6.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Protobuf.3.15.6\lib\net45\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4, Version=1.2.6.0, Culture=neutral, PublicKeyToken=2186fa9121ef231d, processorArchitecture=MSIL">
+      <HintPath>..\packages\K4os.Compression.LZ4.1.2.6\lib\net46\K4os.Compression.LZ4.dll</HintPath>
+    </Reference>
+    <Reference Include="K4os.Compression.LZ4.Streams, Version=1.2.6.0, Culture=neutral, PublicKeyToken=2186fa9121ef231d, processorArchitecture=MSIL">
+      <HintPath>..\packages\K4os.Compression.LZ4.Streams.1.2.6\lib\net46\K4os.Compression.LZ4.Streams.dll</HintPath>
+    </Reference>
+    <Reference Include="Renci.SshNet, Version=2020.0.1.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
+      <HintPath>..\packages\SSH.NET.2020.0.1\lib\net40\Renci.SshNet.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="EmployeeChanges\ChangeRequest.cs" />
+    <Compile Include="EmployeeChanges\ChangeRequestManager.cs" />
+    <Compile Include="sql\SQLConChangeRequestsHandling.cs" />
+    <Compile Include="StatisticsClasses\DepartmentStatistics.cs" />
+    <Compile Include="StatisticsClasses\ProductEvolution.cs" />
+    <Compile Include="StatisticsClasses\EmployeeEvolution.cs" />
+    <Compile Include="DateTools.cs" />
+    <Compile Include="Forms\RestockForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\RestockForm.Designer.cs">
+      <DependentUpon>RestockForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\WorkshiftDetails.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\WorkshiftDetails.Designer.cs">
+      <DependentUpon>WorkshiftDetails.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Restock.cs" />
+    <Compile Include="ShiftCheckers\AlreadyAssignedToShift.cs" />
+    <Compile Include="ShiftCheckers\ConstraintFactory.cs" />
+    <Compile Include="ShiftCheckers\Constraint.cs" />
+    <Compile Include="ShiftCheckers\ConstraintType.cs" />
+    <Compile Include="ShiftCheckers\MaxAmountCheck.cs" />
+    <Compile Include="ShiftCheckers\MaxDailyShiftsCheck.cs" />
+    <Compile Include="ShiftCheckers\MaxHoursCheck.cs" />
+    <Compile Include="ShiftCheckers\ConstraintManager.cs" />
+    <Compile Include="ShiftPerson.cs" />
+    <Compile Include="ShiftPersonManager.cs" />
+    <Compile Include="Forms\AddManufacturer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AddManufacturer.Designer.cs">
+      <DependentUpon>AddManufacturer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\AddProduct.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AddProduct.Designer.cs">
+      <DependentUpon>AddProduct.cs</DependentUpon>
+    </Compile>
+    <Compile Include="StatisticsClasses\AgeStatistics.cs" />
+    <Compile Include="Forms\Bazaar.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Bazaar.Designer.cs">
+      <DependentUpon>Bazaar.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Category.cs" />
+    <Compile Include="StatisticsClasses\CityStatistics.cs" />
+    <Compile Include="StatisticsClasses\NationalityStatistics.cs" />
+    <Compile Include="StatisticsClasses\GenderStatistics.cs" />
+    <Compile Include="DepartmentView.cs" />
+    <Compile Include="Forms\FireForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FireForm.Designer.cs">
+      <DependentUpon>FireForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\ManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ManagerForm.Designer.cs">
+      <DependentUpon>ManagerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ManCountry.cs" />
+    <Compile Include="Manufacturer.cs" />
+    <Compile Include="Nationality.cs" />
+    <Compile Include="Person.cs" />
+    <Compile Include="Product.cs" />
+    <Compile Include="StatisticsClasses\ProductPopularity.cs" />
+    <Compile Include="ProductStatus.cs" />
+    <Compile Include="sql\SQLCon.cs" />
+    <Compile Include="ShiftType.cs" />
+    <Compile Include="sql\SQLConDepartmentHandling.cs" />
+    <Compile Include="sql\SQLConManufacturersHandling.cs" />
+    <Compile Include="sql\SQLConStatisticsHandling.cs" />
+    <Compile Include="sql\SQLConStockRequestsHandling.cs" />
+    <Compile Include="sql\SQLConLogin.cs" />
+    <Compile Include="sql\SQLConPersonHandling.cs" />
+    <Compile Include="sql\SQLConProductHandling.cs" />
+    <Compile Include="sql\SQLConWorkshiftHandling.cs" />
+    <Compile Include="Forms\WorkerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\WorkerForm.Designer.cs">
+      <DependentUpon>WorkerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SalesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SalesForm.Designer.cs">
+      <DependentUpon>SalesForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\LoginForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\LoginForm.Designer.cs">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StatisticsClasses\Turnover.cs" />
+    <Compile Include="EmployeeDepartmentView.cs" />
+    <Compile Include="Workshift.cs" />
+    <Compile Include="WorkshiftManager.cs" />
+    <EmbeddedResource Include="Forms\AddManufacturer.resx">
+      <DependentUpon>AddManufacturer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\AddProduct.resx">
+      <DependentUpon>AddProduct.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Bazaar.resx">
+      <DependentUpon>Bazaar.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FireForm.resx">
+      <DependentUpon>FireForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\LoginForm.resx">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\ManagerForm.resx">
+      <DependentUpon>ManagerForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\RestockForm.resx">
+      <DependentUpon>RestockForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\WorkshiftDetails.resx">
+      <DependentUpon>WorkshiftDetails.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="Forms\SalesForm.resx">
+      <DependentUpon>SalesForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\WorkerForm.resx">
+      <DependentUpon>WorkerForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

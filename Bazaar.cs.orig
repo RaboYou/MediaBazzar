@@ -1,0 +1,516 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+
+namespace MediaBazzar
+{
+    public partial class Bazaar : Form
+    {
+        SQLCon con = new SQLCon();
+        Person person;
+        List<WorkShiftDate> workShiftDate;
+        Dictionary<string, int> usersFromTreeView;
+        Dictionary<int, string> idsFromTreeView;
+        List<DepartmentViewClass> departmentViews;
+
+        public Bazaar(Person personFromLogin) //add Person personFromLogin after testing
+        {
+            InitializeComponent();
+            LoadPersons();
+            person = personFromLogin;
+            userNameLabel.Text = person.GetName();
+            Populate_Treeview();
+            Populate_ComboBoxes();
+            usersFromTreeView = MergeNameDictionaries(departmentViews);
+            idsFromTreeView = MergeIdDictionaries(departmentViews);
+            selectedDateComboBox.SelectedIndex = 0;
+
+
+
+            foreach (string nat in Enum.GetNames(typeof(Nationality)))
+            {
+                cbNationality.Items.Add(nat);
+                cbEditNationality.Items.Add(nat);
+            }
+        }
+<<<<<<< HEAD
+        #region UserHandlerTab
+=======
+>>>>>>> origin/admin
+
+        private void btnCreateUser_Click(object sender, EventArgs e)
+        {
+            if (tbFirstName.Text.Equals("") || tbLastName.Text.Equals("") || cbNationality.SelectedItem == null || tbEmail.Text.Equals("") || tbAddress.Text.Equals(""))
+            {
+                MessageBox.Show("One or more of the fields are empty.");
+            }
+            else if (!Regex.IsMatch(tbEmail.Text, "@."))
+            {
+                MessageBox.Show("Email is not valid");
+            }
+            else
+            {
+                string login = tbFirstName.Text.Substring(0, 3).ToLower() + tbLastName.Text.Substring(0, 3).ToLower();
+                Enum.TryParse(cbNationality.SelectedItem.ToString(), out Nationality nat);
+                if (!con.CheckAccount(login))
+                {
+                    Person newPerson = new Person(tbFirstName.Text, tbLastName.Text, birthDatePicker.Value, nat, tbEmail.Text, tbZipCode.Text, tbCity.Text, tbAddress.Text, DateTime.Now, con.GetPosition(cbPositions.Text), true, login, Convert.ToChar(cbGender.Text));
+                    lbEmployees.Items.Add(tbFirstName.Text + " " + tbLastName.Text);
+                    con.CreatePerson(newPerson, tbPassword.Text);
+                }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            /*Person match = SearchPerson(lbEmployees.SelectedItem);
+            if (match != null)
+            {
+                //lbEmployees.Items.Add(match.Status.ToString());
+            }
+            else
+            {
+                MessageBox.Show("No person selected.");
+            }*/
+        }
+
+        private void lbEmployees_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lbEmployees.SelectedItem.Equals(null)) { }
+            else
+            {
+                editBirthDay.CustomFormat = "dd/MM/yyyy";
+
+                Person selectedPerson = SearchPerson(lbEmployees.SelectedItem);
+
+                /*
+                tbEditFirstName.Text = selectedPerson.FirstName;
+                tbEditLastName.Text = selectedPerson.LastName;
+                cbEditNationality.Text = selectedPerson.Nationality.ToString();
+                editBirthDay.Value = selectedPerson.DateOfBirth;
+                tbEditEmail.Text = selectedPerson.Email;
+                tbEditAddress.Text = selectedPerson.Address;
+                tbEditStatus.Text = selectedPerson.Status.ToString();
+                */
+            }
+        }
+
+        public Person SearchPerson(object input)
+        {
+            /*foreach (Person person in man.GetAllPersons())
+            {
+                if (input != null)
+                {
+                    if (input.ToString().Contains(person.FirstName))
+                    {
+                        return person;
+                    }
+                }
+<<<<<<< HEAD
+            }*/
+            return null;
+        }
+
+        public void LoadPersons()
+        {
+            /*foreach (Person person in man.GetAllPersons())
+            {
+                lbEmployees.Items.Add(person.FirstName + " " + person.LastName);
+            }*/
+        }
+
+        private void tbSearch_TextChanged(object sender, EventArgs e)
+        {
+            string searchQuery = tbSearch.Text;
+            lbEmployees.Items.Clear();
+            Person searched = SearchPerson(searchQuery);
+            if (searched != null)
+            {
+                //lbEmployees.Items.Add(searched.FirstName + " " + searched.LastName);
+=======
+                Person selectedPerson = con.GetPerson(result);
+
+                tbEditFirstName.Text = selectedPerson.firstName;
+                tbEditLastName.Text = selectedPerson.lastName;
+                cbEditNationality.Text = selectedPerson.nationality.ToString();
+                editBirthDay.Value = selectedPerson.dateOfBirth;
+                tbEditEmail.Text = selectedPerson.email;
+                tbEditAddress.Text = selectedPerson.addressStreet;
+                tbEditCity.Text = selectedPerson.addressCity;
+                tbEditZipCode.Text = selectedPerson.addressZipCode;
+                tbEditStatus.Text = selectedPerson.isActive.ToString();
+                switch (selectedPerson.gender.ToString())
+                {
+                    case "M":
+                        cbEditGender.SelectedIndex = 0;
+                        break;
+                    case "F":
+                        cbEditGender.SelectedIndex = 1;
+                        break;
+                    case "N":
+                        cbEditGender.SelectedIndex = 2;
+                        break;
+                    default:
+                        break;
+                }
+                lblSelectedEmpName.Text = lbEmployees.SelectedItem.ToString();
+>>>>>>> origin/admin
+            }
+        }
+
+        private void Bazaar_Load(object sender, EventArgs e)
+        {
+            birthDatePicker.Format = DateTimePickerFormat.Custom;
+            birthDatePicker.CustomFormat = "dd/MM/yyyy";
+
+            editBirthDay.Format = DateTimePickerFormat.Custom;
+            editBirthDay.CustomFormat = " ";
+
+            cbPositions.SelectedIndex = 0;
+
+            foreach (Person person in con.GetAllPersons())
+            {
+                lbEmployees.Items.Add(person.firstName + " " + person.lastName);
+            }
+        }
+
+        private void Bazaar_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Environment.Exit(1);
+        }
+
+        #endregion
+
+        #region WorkshiftHandlerTab
+
+        /// <summary>
+        /// This method populates the TreeView with all the workers which positions allow them to work on shifts
+        /// </summary>
+        private void Populate_Treeview()
+        {
+            departmentViews = con.GetDepartmentViews();
+
+            foreach (var item in departmentViews)
+            {
+                TreeNode node = shiftworkersTreeView.Nodes.Add(item.deptId.ToString(), item.departmentName);
+                int indexOfThisKey = shiftworkersTreeView.Nodes.IndexOfKey(item.deptId.ToString());
+                foreach (var employee in item.employees)
+                {
+                    var dudu = shiftworkersTreeView.Nodes[indexOfThisKey].Nodes.Add(employee.userId.ToString(), $"{employee.firstName} {employee.lastName}, {employee.position}");
+                    dudu.ContextMenuStrip = nodeContextMenu;
+
+                }
+            }
+            shiftworkersTreeView.ExpandAll();
+        }
+
+        private void Populate_ComboBoxes()
+        {
+            DateTime now = DateTime.Now.Date;
+            for (int i = 1; i < 201; i++)
+            {
+                selectedDateComboBox.Items.Add(now.AddDays(i));
+            }
+            for (int i = 1; i < 13; i++)
+            {
+                forecastComboBox.Items.Add(i);
+            }
+            for (int i = 1; i < 21; i++)
+            {
+                minAmountOfWorkersComboBox.Items.Add(i);
+            }
+            foreach (string item in Enum.GetNames(typeof(ShiftType)))
+            {
+                shiftTypeComboBox.Items.Add(item);
+            }
+            minAmountOfWorkersComboBox.SelectedIndex = 4;
+            forecastComboBox.SelectedIndex = 0;
+
+        }
+
+        private void selectedDateComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            //this has to query the db for shifts and min_workers
+            shiftTypeComboBox.SelectedIndex = 0;
+            shiftListBoxFill();
+
+        }
+
+        private void shiftTypeComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            shiftListBoxFill();
+        }
+
+        private void shiftListBoxFill()
+        {
+            usersWorkingOnThisShiftListBox.Items.Clear();
+            DateTime date = Convert.ToDateTime(selectedDateComboBox.SelectedItem.ToString());
+            ShiftType shiftType = (ShiftType)Enum.Parse(typeof(ShiftType), shiftTypeComboBox.SelectedItem.ToString());
+            workShiftDate = con.GetWorkShiftsByDate(date.Date);
+
+            if (!(workShiftDate is null))
+            {
+                foreach (var item in workShiftDate)
+                {
+                    if (item.shiftType == shiftType)
+                    {
+                        minAmountOfWorkersComboBox.SelectedItem = item.minAmountOfWorkers;
+                        foreach (var user in item.workshift)
+                        {
+                            usersWorkingOnThisShiftListBox.Items.Add(idsFromTreeView[user.userId]);
+                        }
+                    }
+                }
+            }
+        }
+
+        private Dictionary<string, int> MergeNameDictionaries(List<DepartmentViewClass> departmentViews)
+        {
+            Dictionary<string, int> output = new Dictionary<string, int>();
+
+            foreach (var item in departmentViews)
+            {
+                Dictionary<string, int> departmentUsers = item.NameListPerDepartment();
+                departmentUsers.ToList().ForEach(x => output.Add(x.Key, x.Value));
+            }
+            return output;
+        }
+
+        private Dictionary<int, string> MergeIdDictionaries(List<DepartmentViewClass> departmentViews)
+        {
+            Dictionary<int, string> output = new Dictionary<int, string>();
+
+            foreach (var item in departmentViews)
+            {
+                Dictionary<int, string> departmentUsers = item.IdListPerDepartment();
+                departmentUsers.ToList().ForEach(x => output.Add(x.Key, x.Value));
+            }
+            return output;
+        }
+
+        private void AddUserToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AddUserToShift();
+        }
+
+        private void AddUserToShift()
+        {
+            if (usersWorkingOnThisShiftListBox.Items.Count < Convert.ToInt32(minAmountOfWorkersComboBox.SelectedItem))
+            {
+                string node = shiftworkersTreeView.SelectedNode.Text;
+                if (!usersWorkingOnThisShiftListBox.Items.Contains(node))
+                {
+                    usersWorkingOnThisShiftListBox.Items.Add(node);
+                }
+                else
+                {
+                    MessageBox.Show("This user works on this shift already", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("This shift is full, you need to increase the limit if you want to add this person", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void RemoveFromShift()
+        {
+            //to do: check index before execution
+            if (usersWorkingOnThisShiftListBox.SelectedIndex != -1)
+            {
+                usersWorkingOnThisShiftListBox.Items.RemoveAt(usersWorkingOnThisShiftListBox.SelectedIndex);
+            }
+        }
+
+        private void shiftworkersTreeView_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                shiftworkersTreeView.SelectedNode = shiftworkersTreeView.GetNodeAt(e.X, e.Y);
+            }
+        }
+
+        private void usersWorkingOnThisShiftListBox_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                usersWorkingOnThisShiftListBox.SelectedIndex = usersWorkingOnThisShiftListBox.IndexFromPoint(e.X, e.Y);
+            }
+        }
+
+        private void removeUserFromThisShiftToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            RemoveFromShift();
+        }
+
+        private WorkShiftDate ClassForUpdate(DateTime date, ShiftType shiftType)
+        {
+            if (workShiftDate is null)
+            {
+                return null;
+            }
+            else
+            {
+                foreach (var item in workShiftDate)
+                {
+                    if (item.shiftDate == date && item.shiftType == shiftType)
+                    {
+                        return item;
+                    }
+                }
+                return null;
+            }
+        }
+
+
+        private void SubmitButton_Click(object sender, EventArgs e)
+        {
+            List<int> usersByDate = new List<int>();
+            StringBuilder sb = new StringBuilder();
+            List<int> alreadyChecked = new List<int>();
+            List<int> usersForThisShift = new List<int>();
+            bool flag = false;
+            int minAmountOfWorkers = Convert.ToInt32(minAmountOfWorkersComboBox.SelectedItem);
+            DateTime date = Convert.ToDateTime(selectedDateComboBox.SelectedItem.ToString());
+            ShiftType shiftType = (ShiftType)Enum.Parse(typeof(ShiftType), shiftTypeComboBox.SelectedItem.ToString());
+            if (!(workShiftDate is null))
+            {
+                foreach (var item in workShiftDate)
+                {
+                    if (item.shiftType != shiftType)
+                    {
+                        usersByDate.AddRange(item.ExportUsers());
+                    }
+                }
+            }
+            foreach (var item in usersWorkingOnThisShiftListBox.Items)
+            {
+                usersByDate.Add(usersFromTreeView[item.ToString()]);
+                usersForThisShift.Add(usersFromTreeView[item.ToString()]);
+            }
+            foreach (var item in usersByDate)
+            {
+                if (!alreadyChecked.Contains(item))
+                {
+                    int du = usersByDate.Count(s => s == item);// this thing counts the number of occurrences
+                    alreadyChecked.Add(item);
+                    if (du > 2)
+                    {
+                        sb.Append(idsFromTreeView[item]);
+                        sb.Append('\n');
+                        flag = true;
+                    }
+                }
+
+            }
+            if (minAmountOfWorkers != usersWorkingOnThisShiftListBox.Items.Count)
+            {
+                MessageBox.Show("The amount of people that should be on this shift is not correct", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else if (flag)
+            {
+                MessageBox.Show("Those people are planned more than twice a day: \n" + sb.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                //MessageBox.Show("Awesome", "Info", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                WorkShiftDate classForUpdate = ClassForUpdate(date, shiftType);
+                bool dudu;
+                if (classForUpdate is null)
+                {
+                    //dudu = con.UpdateShift(classForUpdate.workshiftDateId, minAmountOfWorkers, usersForThisShift);
+                    dudu = con.UpdateShift(minAmountOfWorkers, usersForThisShift, date, shiftType);
+                    MessageBox.Show("Shift updated successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    //dudu = con.UpdateShift(classForUpdate.workshiftDateId, minAmountOfWorkers, usersForThisShift, classForUpdate.workshift);
+                    dudu = con.UpdateShift(minAmountOfWorkers, usersForThisShift, date, shiftType, classForUpdate.workshiftDateId, classForUpdate.workshift);
+                    if (dudu)
+                    {
+                        MessageBox.Show("Shift updated successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Something went wrong", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void AddToListButton_Click(object sender, EventArgs e)
+        {
+            AddUserToShift();
+        }
+
+        private void RemoveFromListButton_Click(object sender, EventArgs e)
+        {
+            RemoveFromShift();
+        }
+        private void btnSearchEmployee_Click(object sender, EventArgs e)
+        {
+            lbEmployees.Items.Clear();
+            if (con.SearchPersons(tbSearch.Text) != null)
+            {
+                foreach (Person result in con.SearchPersons(tbSearch.Text))
+                {
+                    lbEmployees.Items.Add(result.firstName + " " + result.lastName);
+                }
+            }
+            else
+            {
+                lbEmployees.Items.Add("No employees found with that name");
+            }
+        }
+
+        private void btnFire_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!Regex.IsMatch(tbEditEmail.Text, "@."))
+                {
+                    string[] name = lblSelectedEmpName.Text.Split(' ');
+                    string login = name[0].Substring(0, 3).ToLower() + name[1].Substring(0, 3).ToLower();
+                    Person toEdit = con.GetPerson(login);
+                    Enum.TryParse(cbEditNationality.SelectedItem.ToString(), out Nationality nat);
+                    bool isActive = Convert.ToBoolean(tbEditStatus.Text);
+                    Person edited = new Person(tbEditFirstName.Text, tbEditLastName.Text, DateTime.Parse(editBirthDay.Text), nat, tbEditEmail.Text, tbEditZipCode.Text, tbEditCity.Text, tbEditAddress.Text, toEdit.dateOfEmployment, toEdit.positionId, isActive, login, Convert.ToChar(cbEditGender.Text));
+                    con.UpdatePerson(edited, toEdit.id);
+                    lbEmployees.Items.Clear();
+                    foreach (Person person in con.GetAllPersons())
+                    {
+                        lbEmployees.Items.Add(person.firstName + " " + person.lastName);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Email is not valid!");
+                }
+            }
+            catch (ArgumentNullException ex)
+            {
+                MessageBox.Show(ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnSetInactive_Click(object sender, EventArgs e)
+        {
+            FireForm changeStatus = new FireForm();
+            changeStatus.ShowDialog();
+        }
+    }
+}
+
+#endregion
